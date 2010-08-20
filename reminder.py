@@ -122,7 +122,7 @@ PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         ret = ""
         for (medname, day) in self.last_pill_dates.iteritems():
             if day < datetime.datetime.today(): continue
-            ret += medname.literal_value['string'] + ": <b>" + day.isoformat()[:10]+"</b>"
+            ret += medname.literal_value['string'] + ": <b>" + day.isoformat()[:10]+"</b><br>"
 
         if (ret == ""): return "Up to date on all meds."
         ret =  "You're almost ready for refills!<br<br>" + ret
