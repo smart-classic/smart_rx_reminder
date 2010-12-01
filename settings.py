@@ -1,12 +1,12 @@
-SMART_SERVER_OAUTH = {'consumer_key': 'rx-reminder-app', 
+SMART_SERVER_OAUTH = {'consumer_key': 'developer-sandbox@apps.smartplatforms.org', 
                       'consumer_secret': 'smartapp-secret'}
 
 SMART_SERVER_PARAMS = {
-    'api_base' : 'http://localhost:7000',
-    'request_token_url' : 'http://localhost:7000/oauth/request_token',
-    'authorize_url': 'http://localhost:7001/oauth/authorize',
-    'access_token_url': 'http://localhost:7000/oauth/access_token',
-    'oauth_callback' : 'oob'
+    'api_base' :          'http://sandbox-api.smartplatforms.org',
+    'request_token_url' : 'http://sandbox-api.smartplatforms.org/oauth/request_token',
+    'authorize_url':      'http://sandbox.smartplatforms.org/oauth/authorize',
+    'access_token_url':   'http://sandbox-api.smartplatforms.org/oauth/access_token',
+    'oauth_callback' :    'oob'
 }
 
-SMART_APP_ID = 'rx-reminder@apps.smart.org'
+SMART_APP_ID = SMART_SERVER_OAUTH['consumer_key']

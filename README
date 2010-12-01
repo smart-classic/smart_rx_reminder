@@ -1,0 +1,35 @@
+SMArt Rx Reminder
+Josh Mandel, CHIP
+-----------------
+
+# Getting Started
+A sample SMArt REST App that gets a medication list and displays when
+each prescription fulfillment will run out.
+
+You can run this app inside the reference container by hosting it
+locally with cherrypy.
+
+For example, to get started on ubuntu, you can
+  apt-get install python-cherrypy3 
+  apt-get install git-core
+  git clone https://github.com/chb/smart_rx_reminder.git
+  cd smart_rx_reminder
+  python reminder.py
+
+Then log in to the reference container at:  
+ http://sandbox.smartplatforms.org
+
+Launch the "Developers Sandbox" app, which will point at your locally
+hosted version of SMArt Rx Reminder.
+
+
+# Files
+cherrypy.config.py: Basic configuration parameters including host port
+(8000) and parameters to enable sessions.
+
+settings.py: Defines the SMArt API endpoint URLs, as well as OAuth
+parameters (consumer_key, consumer_secret).
+
+reminder.py: Implements a simple SMArt REST app, including OAuth
+dance, fetching a medication list for the in-context patient, and some
+very simple processing.

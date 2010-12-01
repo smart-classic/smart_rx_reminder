@@ -34,7 +34,7 @@ class RxReminder:
 
     """An OAuth start page"""
     @cherrypy.expose
-    def start_auth(self, record_id):        
+    def index_html(self, record_id):        
 
         # Initialize a SmartClient()
         client = get_smart_client()
@@ -50,7 +50,7 @@ class RxReminder:
 
     """Completes the OAuth dance"""
     @cherrypy.expose
-    def after_auth(self, oauth_token, oauth_verifier):
+    def after_auth_html(self, oauth_token, oauth_verifier):
 
         # Make sure the user has authorized the expected token
         stored_token = cherrypy.session['request_token']
@@ -106,6 +106,7 @@ PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
         #Print a formatted list
         return self.format_last_dates()
+
     def update_pill_dates(self, pill):
 
         ISO_8601_DATETIME = '%Y-%m-%dT%H:%M:%SZ'
@@ -121,12 +122,13 @@ PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
     def format_last_dates(self):
         ret = ""
         for (medname, day) in self.last_pill_dates.iteritems():
-            if day < datetime.datetime.today(): continue
-            ret += medname.literal_value['string'] + ": <b>" + day.isoformat()[:10]+"</b><br>"
+            late = ""
+            if day < datetime.datetime.today(): 
+                late = "<i>LATE!</i> "
+            ret += late+medname.literal_value['string'] + ": <b>" + day.isoformat()[:10]+"</b><br>"
 
         if (ret == ""): return "Up to date on all meds."
-        ret =  "You're almost ready for refills!<br<br>" + ret
-
+        ret =  "Refills due!<br<br>" + ret
         return ret
 
 # Point cherrypy to the config file, and map the root URL        
