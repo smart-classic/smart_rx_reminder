@@ -61,9 +61,6 @@ class RxReminder:
         client.update_token(stored_token)
         access_token = client.exchange(oauth_token, oauth_verifier)
         cherrypy.session['access_token'] = access_token
-        # Save access token/secret to RDF store in the SMArt conatiner
-#        client = get_smart_client()
-#        client.save_token(cherrypy.session['record_id'], access_token)
 
         # Rediret to the main view
         raise cherrypy.HTTPRedirect("rx_reminder", 307)
@@ -73,7 +70,7 @@ class RxReminder:
     @cherrypy.expose
     def rx_reminder(self):
         client = get_smart_client()
-        record_id = cherrypy.session['record_id']
+        client.record_id = cherrypy.session['record_id']
         access_token = cherrypy.session['access_token']
 
         # Use the access token associated with this record
@@ -97,7 +94,7 @@ PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 """)
 
         # Represent the list as an RDF graph, and run the query
-        meds = parse_rdf(client.get(str("/records/%s/medications/"%record_id)))
+        meds = parse_rdf(client.records_X_medications_GET())
         pills = list(q.execute(meds))
 
         # Find the last fulfillment date for each medication

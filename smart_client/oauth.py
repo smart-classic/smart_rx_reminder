@@ -294,7 +294,7 @@ class OAuthRequest(object):
     sbs = self.get_signature_base_string()
     # set the signature
     self.signature = signature_method.sign(sbs, self.consumer, self.token)
-    print sbs, self.signature
+
   def verify(self, nonce_store):
     """
     Verify the request, which should be signed.
