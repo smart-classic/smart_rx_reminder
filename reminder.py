@@ -24,12 +24,12 @@ SMART_SERVER_OAUTH = {'consumer_key': 'developer-sandbox@apps.smartplatforms.org
 
 # The SMArt contianer we're planning to talk to
 SMART_SERVER_PARAMS = {
-    'api_base' :          'http://localhost:7000'
+    'api_base' :          'http://sandbox-api.smartplatforms.org'
 }
 
 
 """
- This app serves two URLs: 
+ A SMArt app serves at least two URLs: 
    * "bootstrap.html" page to load the client library
    * "index.html" page to supply the UI.
 """
