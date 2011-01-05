@@ -1,121 +1,108 @@
 """
-Example SMArt REST Application: Performs OAuth, storing record-level
-access tokens in the application's RDF repository.  Provides a list of
-which prescriptions will need to be refilled soon (based on dispense
-quantity + date, and the unrealistic simplifying assumption that one
-pill per day is consumed).  
-
-In addition to displaying friendly reminders within the SMArt
-Container, this application easily be tweaked to send out reminder
-e-mails when a prescription is running low.
+Example SMArt REST Application: Parses OAuth tokens from
+browser-supplied cookie, then provides a list of which prescriptions
+will need to be refilled soon (based on dispense quantity + date, and
+the unrealistic simplifying assumption that one pill per day is
+consumed).
 
 Josh Mandel
 Children's Hospital Boston, 2010
 """
 
-import cherrypy
+import web, RDF, urllib
 import datetime
-import RDF
-import settings
-from smart_client.rdf_utils import *
+import smart_client
+from smart_client import oauth
 from smart_client.smart import SmartClient
-cp_config = "cherrypy.config.py"
+from smart_client.common.util import serialize_rdf
+
+# Basic configuration:  the consumer key and secret we'll use
+# to OAuth-sign requests.
+SMART_SERVER_OAUTH = {'consumer_key': 'developer-sandbox@apps.smartplatforms.org', 
+                      'consumer_secret': 'smartapp-secret'}
 
 
-"""Convenience function to initialize a new SmartClient"""
-def get_smart_client(resource_tokens=None):
-    return SmartClient(settings.SMART_APP_ID, 
-                       settings.SMART_SERVER_PARAMS, 
-                       settings.SMART_SERVER_OAUTH, 
-                       resource_tokens)
+# The SMArt contianer we're planning to talk to
+SMART_SERVER_PARAMS = {
+    'api_base' :          'http://localhost:7000'
+}
 
-"""Exposes pages through cherrypy"""
+
+"""
+ This app serves two URLs: 
+   * "bootstrap.html" page to load the client library
+   * "index.html" page to supply the UI.
+"""
+urls = ('/bootstrap.html', 'bootstrap',
+        '/index.html',     'RxReminder')
+
+
+# Required "bootstrap.html" page just includes SMArt client library
+class bootstrap:
+    def GET(self):
+        return """<!DOCTYPE html>
+                   <html>
+                    <head>
+                     <script src="http://localhost:8001/framework/smart/scripts/smart-api-client.js"></script>
+                    </head>
+                    <body></body>
+                   </html>"""
+
+
+# Exposes pages through web.py
 class RxReminder:
 
-    """An OAuth start page"""
-    @cherrypy.expose
-    def index_html(self, record_id):        
-
-        # Initialize a SmartClient()
-        client = get_smart_client()
-        params = {'offline': 'true', 'record_id': record_id}
-
-        # Get a request token/secret pair and save them
-        rt = client.get_request_token(params)
-        cherrypy.session['request_token'] = rt
-        cherrypy.session['record_id'] = record_id
-
-        #Redirect to the SMArt container's authentication page
-        raise cherrypy.HTTPRedirect(client.redirect_url(rt), 307)
-
-    """Completes the OAuth dance"""
-    @cherrypy.expose
-    def after_auth_html(self, oauth_token, oauth_verifier):
-
-        # Make sure the user has authorized the expected token
-        stored_token = cherrypy.session['request_token']
-        assert stored_token.token == oauth_token, "Authorized the wrong token."
+    """An SMArt REST App start page"""
+    def GET(self):
+        # Fetch and use
+        cookie_name = web.input().cookie_name
+        smart_oauth_header = web.cookies().get(cookie_name)
+        smart_oauth_header = urllib.unquote(smart_oauth_header)
+        client = get_smart_client(smart_oauth_header)
         
-        # Exchange the request token/secret for an access token/secret
-        client = get_smart_client()
-        client.update_token(stored_token)
-        access_token = client.exchange(oauth_token, oauth_verifier)
-        cherrypy.session['access_token'] = access_token
-
-        # Rediret to the main view
-        raise cherrypy.HTTPRedirect("rx_reminder", 307)
-
-
-    """Provides a list of upcoming refills"""
-    @cherrypy.expose
-    def rx_reminder(self):
-        client = get_smart_client()
-        client.record_id = cherrypy.session['record_id']
-        access_token = cherrypy.session['access_token']
-
-        # Use the access token associated with this record
-        client.update_token(access_token)
-
+        # Represent the list as an RDF graph
+        meds = client.records_X_medications_GET()
+        
         # Find a list of all fulfillments for each med.
-        q = RDF.SPARQLQuery("""
-BASE <http://smartplatforms.org/>
-PREFIX dc:<http://purl.org/dc/elements/1.1/>
-PREFIX dcterms:<http://purl.org/dc/terms/>
-PREFIX sp:<http://smartplatforms.org/>
-PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-   SELECT  ?med ?name ?fill ?quant ?when
-   WHERE {
-          ?med rdf:type <medication>.
-          ?med dcterms:title ?name.
-          ?med sp:fulfillment ?fill.
-          ?fill sp:dispenseQuantity ?quant.
-          ?fill dc:date ?when.
-   }
-""")
-
-        # Represent the list as an RDF graph, and run the query
-        meds = parse_rdf(client.records_X_medications_GET())
-        pills = list(q.execute(meds))
-
+        q = """
+            PREFIX dc:<http://purl.org/dc/elements/1.1/>
+            PREFIX dcterms:<http://purl.org/dc/terms/>
+            PREFIX sp:<http://smartplatforms.org/terms#>
+            PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+               SELECT  ?med ?name ?quant ?when
+               WHERE {
+                      ?med rdf:type sp:Medication .
+                     ?med sp:code ?medc.
+                      ?medc dcterms:title ?name.
+                      ?med sp:fulfillment ?fill.
+                      ?fill sp:dispenseQuantity ?quant.
+                      ?fill dc:date ?when.
+               }
+            """
+        print q, serialize_rdf(meds)
+        pills = RDF.SPARQLQuery(q).execute(meds)
+        
         # Find the last fulfillment date for each medication
         self.last_pill_dates = {}
         for pill in pills:
             self.update_pill_dates(pill)
 
         #Print a formatted list
-        return self.format_last_dates()
+        return header + self.format_last_dates() + footer
 
-    def update_pill_dates(self, pill):
-
+    def update_pill_dates(self, pill):        
         ISO_8601_DATETIME = '%Y-%m-%dT%H:%M:%SZ'
         def runs_out(pill):
-            s = datetime.datetime.strptime(pill['when'].literal_value['string'], ISO_8601_DATETIME)
-            s += datetime.timedelta(days=int(pill['quant'].literal_value['string']))
+            print "Date", str(pill['when'])
+            s = datetime.datetime.strptime(str(pill['when']), ISO_8601_DATETIME)
+            s += datetime.timedelta(days=int(str(pill['quant'])))
             return s
 
-        last_day = runs_out(pill)
-        if pill['name'] not in self.last_pill_dates or (last_day > self.last_pill_dates[pill['name']]):
-            self.last_pill_dates[pill['name']] = last_day
+        r = runs_out(pill)
+        previous_value = self.last_pill_dates.setdefault(pill['name'], r)
+        if r > previous_value:
+            self.last_pill_dates[pill['name']] = r
+
 
     def format_last_dates(self):
         ret = ""
@@ -123,11 +110,39 @@ PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
             late = ""
             if day < datetime.datetime.today(): 
                 late = "<i>LATE!</i> "
-            ret += late+medname.literal_value['string'] + ": <b>" + day.isoformat()[:10]+"</b><br>"
+            ret += late+str(medname)+ ": <b>" + day.isoformat()[:10]+"</b><br>"
 
         if (ret == ""): return "Up to date on all meds."
-        ret =  "Refills due!<br<br>" + ret
+        ret =  "Refills due!<br><br>" + ret
         return ret
 
-# Point cherrypy to the config file, and map the root URL        
-cherrypy.quickstart(RxReminder(), "/", cp_config)
+
+header = """<!DOCTYPE html>
+<html>
+  <head><script src="http://localhost:8001/framework/smart/scripts/smart-api-page.js"></script></head>
+  <body>
+"""
+
+footer = """
+</body>
+</html>"""
+
+
+"""Convenience function to initialize a new SmartClient"""
+def get_smart_client(authorization_header, resource_tokens=None):
+    oa_params = oauth.parse_header(authorization_header)
+    
+    resource_tokens={'oauth_token':       oa_params['smart_oauth_token'],
+                     'oauth_token_secret':oa_params['smart_oauth_token_secret']}
+
+    ret = SmartClient(SMART_SERVER_OAUTH['consumer_key'], 
+                       SMART_SERVER_PARAMS, 
+                       SMART_SERVER_OAUTH, 
+                       resource_tokens)
+    
+    ret.record_id=oa_params['smart_record_id']
+    return ret
+
+app = web.application(urls, globals())
+if __name__ == "__main__":
+    app.run()
