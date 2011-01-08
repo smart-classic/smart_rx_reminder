@@ -43,7 +43,7 @@ class bootstrap:
         return """<!DOCTYPE html>
                    <html>
                     <head>
-                     <script src="http://localhost:8001/framework/smart/scripts/smart-api-client.js"></script>
+                     <script src="http://sample-apps.smartplatforms.org/framework/smart/scripts/smart-api-client.js"></script>
                     </head>
                     <body></body>
                    </html>"""
@@ -79,7 +79,6 @@ class RxReminder:
                       ?fill dc:date ?when.
                }
             """
-        print q, serialize_rdf(meds)
         pills = RDF.SPARQLQuery(q).execute(meds)
         
         # Find the last fulfillment date for each medication
@@ -95,7 +94,7 @@ class RxReminder:
         def runs_out(pill):
             print "Date", str(pill['when'])
             s = datetime.datetime.strptime(str(pill['when']), ISO_8601_DATETIME)
-            s += datetime.timedelta(days=int(str(pill['quant'])))
+            s += datetime.timedelta(days=int(float(str(pill['quant']))))
             return s
 
         r = runs_out(pill)
