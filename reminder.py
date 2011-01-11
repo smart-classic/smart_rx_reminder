@@ -33,8 +33,8 @@ SMART_SERVER_PARAMS = {
    * "bootstrap.html" page to load the client library
    * "index.html" page to supply the UI.
 """
-urls = ('/bootstrap.html', 'bootstrap',
-        '/index.html',     'RxReminder')
+urls = ('/smartapp/bootstrap.html', 'bootstrap',
+        '/smartapp/index.html',     'RxReminder')
 
 
 # Required "bootstrap.html" page just includes SMArt client library
@@ -118,7 +118,7 @@ class RxReminder:
 
 header = """<!DOCTYPE html>
 <html>
-  <head><script src="http://localhost:8001/framework/smart/scripts/smart-api-page.js"></script></head>
+  <head>                     <script src="http://sample-apps.smartplatforms.org/framework/smart/scripts/smart-api-page.js"></script></head>
   <body>
 """
 
@@ -129,6 +129,7 @@ footer = """
 
 """Convenience function to initialize a new SmartClient"""
 def get_smart_client(authorization_header, resource_tokens=None):
+    authorization_header = authorization_header.split("Authorization: ",1)[1]
     oa_params = oauth.parse_header(authorization_header)
     
     resource_tokens={'oauth_token':       oa_params['smart_oauth_token'],
