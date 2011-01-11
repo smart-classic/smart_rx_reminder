@@ -18,7 +18,7 @@ from smart_client.common.util import serialize_rdf
 
 # Basic configuration:  the consumer key and secret we'll use
 # to OAuth-sign requests.
-SMART_SERVER_OAUTH = {'consumer_key': 'developer-sandbox@apps.smartplatforms.org', 
+SMART_SERVER_OAUTH = {'consumer_key': 'my-app@apps.smartplatforms.org', 
                       'consumer_secret': 'smartapp-secret'}
 
 
@@ -59,10 +59,10 @@ class RxReminder:
         smart_oauth_header = web.cookies().get(cookie_name)
         smart_oauth_header = urllib.unquote(smart_oauth_header)
         client = get_smart_client(smart_oauth_header)
-        
+
         # Represent the list as an RDF graph
         meds = client.records_X_medications_GET()
-        
+
         # Find a list of all fulfillments for each med.
         q = """
             PREFIX dc:<http://purl.org/dc/elements/1.1/>
