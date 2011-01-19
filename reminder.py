@@ -72,7 +72,7 @@ class RxReminder:
                SELECT  ?med ?name ?quant ?when
                WHERE {
                       ?med rdf:type sp:Medication .
-                     ?med sp:code ?medc.
+                     ?med sp:drugName ?medc.
                       ?medc dcterms:title ?name.
                       ?med sp:fulfillment ?fill.
                       ?fill sp:dispenseQuantity ?quant.
@@ -80,7 +80,6 @@ class RxReminder:
                }
             """
         pills = RDF.SPARQLQuery(q).execute(meds)
-        
         # Find the last fulfillment date for each medication
         self.last_pill_dates = {}
         for pill in pills:
