@@ -89,7 +89,7 @@ class RxReminder:
         return header + self.format_last_dates() + footer
 
     def update_pill_dates(self, pill):        
-        ISO_8601_DATETIME = '%Y-%m-%dT%H:%M:%SZ'
+        ISO_8601_DATETIME = '%Y-%m-%d'
         def runs_out(pill):
             print "Date", str(pill['when'])
             s = datetime.datetime.strptime(str(pill['when']), ISO_8601_DATETIME)
