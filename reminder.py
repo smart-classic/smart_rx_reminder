@@ -1,9 +1,7 @@
 """
 Example SMArt REST Application: Parses OAuth tokens from
 browser-supplied cookie, then provides a list of which prescriptions
-will need to be refilled soon (based on dispense quantity + date, and
-the unrealistic simplifying assumption that one pill per day is
-consumed).
+will need to be refilled soon (based on dispense day's supply + date).
 
 Josh Mandel
 Children's Hospital Boston, 2010
@@ -75,7 +73,7 @@ class RxReminder:
                      ?med sp:drugName ?medc.
                       ?medc dcterms:title ?name.
                       ?med sp:fulfillment ?fill.
-                      ?fill sp:dispenseQuantity ?quant.
+                      ?fill sp:dispenseDaysSupply ?quant.
                       ?fill dc:date ?when.
                }
             """
