@@ -77,27 +77,29 @@ class RxReminder:
                       ?fill dc:date ?when.
                }
             """
-        pills = RDF.SPARQLQuery(q).execute(meds)
+        pills = meds.query(q)
+
         # Find the last fulfillment date for each medication
         self.last_pill_dates = {}
+
         for pill in pills:
-            self.update_pill_dates(pill)
+            self.update_pill_dates(*pill)
 
         #Print a formatted list
         return header + self.format_last_dates() + footer
 
-    def update_pill_dates(self, pill):        
+    def update_pill_dates(self, med, name, quant, when):        
         ISO_8601_DATETIME = '%Y-%m-%d'
-        def runs_out(pill):
-            print "Date", str(pill['when'])
-            s = datetime.datetime.strptime(str(pill['when']), ISO_8601_DATETIME)
-            s += datetime.timedelta(days=int(float(str(pill['quant']))))
+        def runs_out():
+            print "Date", when
+            s = datetime.datetime.strptime(str(when), ISO_8601_DATETIME)
+            s += datetime.timedelta(days=int(float(str(quant))))
             return s
 
-        r = runs_out(pill)
-        previous_value = self.last_pill_dates.setdefault(pill['name'], r)
+        r = runs_out()
+        previous_value = self.last_pill_dates.setdefault(name, r)
         if r > previous_value:
-            self.last_pill_dates[pill['name']] = r
+            self.last_pill_dates[name] = r
 
 
     def format_last_dates(self):

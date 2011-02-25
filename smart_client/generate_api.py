@@ -3,7 +3,6 @@ Generate all API methods from SMArt OWL ontology
 """
 
 import os, re
-import RDF
 import common.rdf_ontology as rdf_ontology
 
 pFormat = "{.*?}"
