@@ -128,7 +128,6 @@ footer = """
 
 """Convenience function to initialize a new SmartClient"""
 def get_smart_client(authorization_header, resource_tokens=None):
-    authorization_header = authorization_header.split("Authorization: ",1)[1]
     oa_params = oauth.parse_header(authorization_header)
     
     resource_tokens={'oauth_token':       oa_params['smart_oauth_token'],
