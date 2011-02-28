@@ -7,7 +7,7 @@ Josh Mandel
 Children's Hospital Boston, 2010
 """
 
-import web, RDF, urllib
+import web,  urllib
 import datetime
 import smart_client
 from smart_client import oauth
