@@ -6,12 +6,23 @@ Josh Mandel, CHIP
 A sample SMArt REST App that gets a medication list and displays when
 each prescription fulfillment will run out.
 
-You can run this app inside the reference container by hosting it
-locally with webpy.
+You can run this app inside the reference container by running it
+locally on port 8000.  You'll need the following python packages:
+web.py, rdflib, rdflibextras, and pyparsing.
 
-For example, to get started on ubuntu, you can
+To get started on ubuntu, you can
   apt-get install python-webpy
   apt-get install git-core
+  apt-get install python-setuptools
+  easy_install rdflib rdfextras
+
+To get started on Windows, you can:
+  * Install python 2.7: http://www.python.org/getit/
+  * Install git: http://code.google.com/p/msysgit/
+  * Install setuptools:  http://peak.telecommunity.com/dist/ez_setup.py (download + run)
+  * c:\pythonxx\Scripts\easy_install.exe web.py pyparsing rdflib rdfextras
+
+Now. obtain and launch reminder.py:
   git clone https://github.com/chb/smart_rx_reminder.git
   cd smart_rx_reminder
   python reminder.py 8000
