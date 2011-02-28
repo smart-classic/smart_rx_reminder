@@ -11,9 +11,7 @@ locally on port 8000.  You'll need the following python packages:
 web.py, rdflib, rdflibextras, and pyparsing.
 
 To get started on ubuntu, you can
-  apt-get install python-webpy
-  apt-get install git-core
-  apt-get install python-setuptools
+  apt-get install git-core python-webpy python-pyparsing python-setuptools
   easy_install rdflib rdfextras
 
 To get started on Windows, you can:
