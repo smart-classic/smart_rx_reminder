@@ -22,7 +22,6 @@ To get started on Windows, you can:
 
 Now. obtain and launch reminder.py:
   git clone https://github.com/chb/smart_rx_reminder.git
-  git checkout rdflib
   cd smart_rx_reminder
   python reminder.py 8000
 
