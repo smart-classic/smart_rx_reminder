@@ -12,7 +12,7 @@ web.py, rdflib, rdflibextras, and pyparsing.
 
 To get started on ubuntu, you can
   apt-get install git-core python-webpy python-pyparsing python-setuptools
-  easy_install rdflib rdfextras
+  easy_install -U "rdflib>=3.0.0" rdfextras
 
 To get started on Windows, you can:
   * Install python 2.7: http://www.python.org/getit/
