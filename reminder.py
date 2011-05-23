@@ -16,13 +16,15 @@ from smart_client.common.util import serialize_rdf
 
 # Basic configuration:  the consumer key and secret we'll use
 # to OAuth-sign requests.
-SMART_SERVER_OAUTH = {'consumer_key': 'my-app@apps.smartplatforms.org', 
-                      'consumer_secret': 'smartapp-secret'}
+SMART_SERVER_OAUTH = {
+    'consumer_key': 'my-app@apps.smartplatforms.org', 
+    'consumer_secret': 'smartapp-secret'
+}
 
 
 # The SMArt contianer we're planning to talk to
 SMART_SERVER_PARAMS = {
-    'api_base' :          'http://sandbox-api.smartplatforms.org'
+
 }
 
 
@@ -56,7 +58,11 @@ class RxReminder:
         cookie_name = web.input().cookie_name
         smart_oauth_header = web.cookies().get(cookie_name)
         smart_oauth_header = urllib.unquote(smart_oauth_header)
+        oa_params = oauth.parse_header(smart_oauth_header)
+        SMART_SERVER_PARAMS['api_base'] = oa_params['smart_container_api_base']
+
         client = get_smart_client(smart_oauth_header)
+
 
         # Represent the list as an RDF graph
         meds = client.records_X_medications_GET()
