@@ -6,6 +6,9 @@ will need to be refilled soon (based on dispense day's supply + date).
 Josh Mandel
 Children's Hospital Boston, 2010
 """
+import sys, os
+abspath = os.path.dirname(__file__)
+sys.path.append(abspath)
 
 import web,  urllib
 import datetime
@@ -17,14 +20,14 @@ from smart_client.common.util import serialize_rdf
 # Basic configuration:  the consumer key and secret we'll use
 # to OAuth-sign requests.
 SMART_SERVER_OAUTH = {
-    'consumer_key': 'my-app@apps.smartplatforms.org', 
+#    'consumer_key': will fill this in later, based on incoming request
     'consumer_secret': 'smartapp-secret'
 }
 
 
 # The SMArt contianer we're planning to talk to
 SMART_SERVER_PARAMS = {
-
+#    'api_base': will fill this in later, based on incoming request
 }
 
 
@@ -54,18 +57,35 @@ class RxReminder:
 
     """An SMArt REST App start page"""
     def GET(self):
-        # Fetch and use
+        # Find the name of the cookie contianing our context + OAuth data
         cookie_name = web.input().cookie_name
+
+        # Obtain the cookie
         smart_oauth_header = web.cookies().get(cookie_name)
         smart_oauth_header = urllib.unquote(smart_oauth_header)
+        
+        # Pull out OAuth params from the header
         oa_params = oauth.parse_header(smart_oauth_header)
+
+        # This is how we know...
+        # 1. what container we're talking to
         SMART_SERVER_PARAMS['api_base'] = oa_params['smart_container_api_base']
+        
+        # 2. what our app ID is
+        SMART_SERVER_OAUTH['consumer_key'] = oa_params['smart_app_id']
+        print >>sys.stderr, "Got ckey", oa_params['smart_app_id']
+
+        # (For demo purposes, we're assuming a hard-coded consumer secret, but 
+        #  in real life we'd look this up in some config or DB now...)
 
         client = get_smart_client(smart_oauth_header)
 
-
+        
         # Represent the list as an RDF graph
-        meds = client.records_X_medications_GET()
+        try:
+            meds = client.records_X_medications_GET()
+        except Exception as e: 
+            return "Couldn't get meds: %s"%e
 
         # Find a list of all fulfillments for each med.
         q = """
@@ -97,7 +117,7 @@ class RxReminder:
     def update_pill_dates(self, med, name, quant, when):        
         ISO_8601_DATETIME = '%Y-%m-%d'
         def runs_out():
-            print "Date", when
+            print>>sys.stderr, "Date", when
             s = datetime.datetime.strptime(str(when), ISO_8601_DATETIME)
             s += datetime.timedelta(days=int(float(str(quant))))
             return s
@@ -148,5 +168,8 @@ def get_smart_client(authorization_header, resource_tokens=None):
     return ret
 
 app = web.application(urls, globals())
+
 if __name__ == "__main__":
     app.run()
+else:
+    application = app.wsgifunc()

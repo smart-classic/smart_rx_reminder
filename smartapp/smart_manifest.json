@@ -2,12 +2,12 @@
   "name" : "SMArt Rx Reminder",
   "description" : "Determines whether a medication has run out.",
   "author" : "Josh Mandel, Children's Hospital Boston",
-  "id" : "developer-sandbox@apps.smartplatforms.org",
+  "id" : "rx-reminder@apps.smartplatforms.org",
   "version" : ".1a",
 
   "mode" : "ui",
 
-  "activities" : { "main" : "http://localhost:8000/bootstrap.html" },
+  "activities" : { "main" : "http://rxreminder.smartplatforms.org/smartapp/bootstrap.html" },
 
   "web_hooks" : { },
 
