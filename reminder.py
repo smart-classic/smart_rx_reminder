@@ -58,34 +58,38 @@ class RxReminder:
     """An SMArt REST App start page"""
     def GET(self):
         # Find the name of the cookie contianing our context + OAuth data
-        cookie_name = web.input().cookie_name
+        try:
+            cookie_name = web.input().cookie_name
+        except:
+            return "No cookie name found in the URL param 'cookie_name'"
 
         # Obtain the cookie
-        smart_oauth_header = web.cookies().get(cookie_name)
-        smart_oauth_header = urllib.unquote(smart_oauth_header)
+        try:
+            smart_oauth_header = web.cookies().get(cookie_name)
+            smart_oauth_header = urllib.unquote(smart_oauth_header)
+        except:
+            return "Couldn't find a cookie to match the name '%s'"%cookie_name
         
         # Pull out OAuth params from the header
         oa_params = oauth.parse_header(smart_oauth_header)
 
         # This is how we know...
         # 1. what container we're talking to
-        SMART_SERVER_PARAMS['api_base'] = oa_params['smart_container_api_base']
-        
+        try:
+            SMART_SERVER_PARAMS['api_base'] = oa_params['smart_container_api_base']
+        except: return "Couldn't find 'smart_contianer_api_base' in %s"%smart_oauth_header
+
         # 2. what our app ID is
-        SMART_SERVER_OAUTH['consumer_key'] = oa_params['smart_app_id']
-        print >>sys.stderr, "Got ckey", oa_params['smart_app_id']
+        try:
+            SMART_SERVER_OAUTH['consumer_key'] = oa_params['smart_app_id']
+        except: return "Couldn't find 'smart_app_id' in %s"%smart_oauth_header
 
         # (For demo purposes, we're assuming a hard-coded consumer secret, but 
         #  in real life we'd look this up in some config or DB now...)
-
         client = get_smart_client(smart_oauth_header)
 
-        
         # Represent the list as an RDF graph
-        try:
-            meds = client.records_X_medications_GET()
-        except Exception as e: 
-            return "Couldn't get meds: %s"%e
+        meds = client.records_X_medications_GET()
 
         # Find a list of all fulfillments for each med.
         q = """
@@ -168,7 +172,7 @@ def get_smart_client(authorization_header, resource_tokens=None):
     return ret
 
 app = web.application(urls, globals())
-
+web.config.debug=True
 if __name__ == "__main__":
     app.run()
 else:
