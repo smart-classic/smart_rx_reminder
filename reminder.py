@@ -36,20 +36,7 @@ SMART_SERVER_PARAMS = {
    * "bootstrap.html" page to load the client library
    * "index.html" page to supply the UI.
 """
-urls = ('/smartapp/bootstrap.html', 'bootstrap',
-        '/smartapp/index.html',     'RxReminder')
-
-
-# Required "bootstrap.html" page just includes SMArt client library
-class bootstrap:
-    def GET(self):
-        return """<!DOCTYPE html>
-                   <html>
-                    <head>
-                     <script src="http://sample-apps.smartplatforms.org/framework/smart/scripts/smart-api-client.js"></script>
-                    </head>
-                    <body></body>
-                   </html>"""
+urls = ('/smartapp/index.html',     'RxReminder')
 
 
 # Exposes pages through web.py
@@ -57,18 +44,12 @@ class RxReminder:
 
     """An SMArt REST App start page"""
     def GET(self):
-        # Find the name of the cookie contianing our context + OAuth data
+        # Obtain the oauth header
         try:
-            cookie_name = web.input().cookie_name
-        except:
-            return "No cookie name found in the URL param 'cookie_name'"
-
-        # Obtain the cookie
-        try:
-            smart_oauth_header = web.cookies().get(cookie_name)
+            smart_oauth_header = web.input().oauth_header
             smart_oauth_header = urllib.unquote(smart_oauth_header)
         except:
-            return "Couldn't find a cookie to match the name '%s'"%cookie_name
+            return "Couldn't find a parameter to match the name 'oauth_header'"
         
         # Pull out OAuth params from the header
         oa_params = oauth.parse_header(smart_oauth_header)
@@ -93,18 +74,17 @@ class RxReminder:
 
         # Find a list of all fulfillments for each med.
         q = """
-            PREFIX dc:<http://purl.org/dc/elements/1.1/>
             PREFIX dcterms:<http://purl.org/dc/terms/>
             PREFIX sp:<http://smartplatforms.org/terms#>
             PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
                SELECT  ?med ?name ?quant ?when
                WHERE {
                       ?med rdf:type sp:Medication .
-                     ?med sp:drugName ?medc.
+                      ?med sp:drugName ?medc.
                       ?medc dcterms:title ?name.
                       ?med sp:fulfillment ?fill.
                       ?fill sp:dispenseDaysSupply ?quant.
-                      ?fill dc:date ?when.
+                      ?fill dcterms:date ?when.
                }
             """
         pills = meds.query(q)
@@ -147,7 +127,7 @@ class RxReminder:
 
 header = """<!DOCTYPE html>
 <html>
-  <head>                     <script src="http://sample-apps.smartplatforms.org/framework/smart/scripts/smart-api-page.js"></script></head>
+  <head>                     <script src="http://sample-apps.smartplatforms.org/framework/smart/scripts/smart-api-client.js"></script></head>
   <body>
 """
 
