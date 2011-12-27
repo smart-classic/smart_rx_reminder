@@ -87,7 +87,7 @@ class RxReminder:
                       ?fill dcterms:date ?when.
                }
             """
-        pills = meds.query(q)
+        pills = meds.graph.query(q)
 
         # Find the last fulfillment date for each medication
         self.last_pill_dates = {}
