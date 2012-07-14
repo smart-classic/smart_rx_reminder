@@ -11,6 +11,9 @@ import datetime
 from smart_client.client import SMARTClient
 import tempfile
 import web
+
+# Note: setting debug to True will BREAK web.py sessions.
+# Consider yourself warned!
 web.config.debug = False
 
 """
