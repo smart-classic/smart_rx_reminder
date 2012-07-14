@@ -8,6 +8,6 @@
   "mode" : "ui",
   "scope": "record",
 
-  "index" : "http://rxreminder.smartplatforms.org/smartapp/index.html",
-  "icon" : "http://rxreminder.smartplatforms.org/smartapp/icon.png"
+  "index" : "http://localhost:8000/smartapp/index.html",
+  "icon" : "http://localhost:8000/smartapp/icon.png"
 }

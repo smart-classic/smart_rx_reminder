@@ -1,5 +1,5 @@
 """
-Example SMArt REST Application: Parses OAuth tokens from
+Example SMART REST Application: Parses OAuth tokens from
 browser-supplied cookie, then provides a list of which prescriptions
 will need to be refilled soon (based on dispense day's supply + date).
 
@@ -7,70 +7,99 @@ Josh Mandel
 Children's Hospital Boston, 2010
 """
 import sys, os
-abspath = os.path.dirname(__file__)
-sys.path.append(abspath)
-
-import web,  urllib
 import datetime
-import smart_client
-from smart_client import oauth
-from smart_client.smart import SmartClient
-from smart_client.common.util import serialize_rdf
+from smart_client.client import SMARTClient
+import tempfile
+import web
+web.config.debug = False
+
+"""
+ A SMART app serves at least two URLs: 
+   * "index.html" page to supply the UI.
+   * "after_auth" page to supply the UI.
+"""
+urls = ('/smartapp/index.html',     'BeginOAuthDance',
+        '/smartapp/after_auth',     'RxReminder')
+
+app = web.application(urls, globals())
+session_store = web.session.DiskStore("session")
+session = web.session.Session(app, session_store)
 
 # Basic configuration:  the consumer key and secret we'll use
 # to OAuth-sign requests.
-SMART_SERVER_OAUTH = {
-#    'consumer_key': will fill this in later, based on incoming request
-    'consumer_secret': 'smartapp-secret'
-}
-
-
-# The SMArt contianer we're planning to talk to
-SMART_SERVER_PARAMS = {
-#    'api_base': will fill this in later, based on incoming request
-}
-
-
-"""
- A SMArt app serves at least two URLs: 
-   * "bootstrap.html" page to load the client library
-   * "index.html" page to supply the UI.
-"""
-urls = ('/smartapp/index.html',     'RxReminder')
-
+CONSUMER_PARAMS = {
+        'consumer_key': 'rx-reminder@apps.smartplatforms.org',
+        'consumer_secret': 'smartapp-secret'
+        }
 
 # Exposes pages through web.py
-class RxReminder:
+class BeginOAuthDance:
 
-    """An SMArt REST App start page"""
+    """An SMART REST App start page"""
     def GET(self):
-        # Obtain the oauth header
-        try:
-            smart_oauth_header = web.input().oauth_header
-            smart_oauth_header = urllib.unquote(smart_oauth_header)
-        except:
-            return "Couldn't find a parameter to match the name 'oauth_header'"
-        
-        # Pull out OAuth params from the header
-        oa_params = oauth.parse_header(smart_oauth_header)
 
-        # This is how we know...
-        # 1. what container we're talking to
-        try:
-            SMART_SERVER_PARAMS['api_base'] = oa_params['smart_container_api_base']
-        except: return "Couldn't find 'smart_contianer_api_base' in %s"%smart_oauth_header
+        # This is how we know... what container we're talking to
+        api_base = web.input().api_base
+        client = get_smart_client(api_base, CONSUMER_PARAMS) 
 
-        # 2. what our app ID is
-        try:
-            SMART_SERVER_OAUTH['consumer_key'] = oa_params['smart_app_id']
-        except: return "Couldn't find 'smart_app_id' in %s"%smart_oauth_header
+        params = {  
+                'oauth_callback':'http://localhost:8000/smartapp/after_auth',
+                'smart_record_id': web.input().record_id
+                }
 
-        # (For demo purposes, we're assuming a hard-coded consumer secret, but 
-        #  in real life we'd look this up in some config or DB now...)
-        client = get_smart_client(smart_oauth_header)
+        session.request_token = client.fetch_request_token(params)
+        session.api_base = client.api_base
+        return web.redirect(client.auth_redirect_url)
+
+
+def complete_oauth_dance():
+
+    # Already have access tokens -- read info from existing session
+    if session.get('access_token', False) and \
+       session.get('record_id', False) and \
+       session.get('user_id', False): 
+
+        return get_smart_client(session.api_base,
+                CONSUMER_PARAMS,
+                resource_token=session.access_token,
+                record_id=session.record_id,
+                user_id=session.user_id) 
+
+    # Need to get access tokens for the 1st time
+    else:
+        # get the token and verifier from the URL parameters
+        oauth_token = web.input().oauth_token
+        oauth_verifier = web.input().oauth_verifier
+
+        # retrieve request token stored in the session
+        request_token = session.request_token
+
+        # is this the right token?
+        if request_token['oauth_token'] != oauth_token:
+            return "uh oh bad token"
+
+        # get the SMART client and use the request token as the token for the exchange
+        client = get_smart_client(session.api_base, 
+                CONSUMER_PARAMS, 
+                resource_token=request_token) 
+
+        client.exchange_token(oauth_verifier) 
+
+        session.access_token = client.token
+        session.record_id = client.record_id
+        session.user_id = client.user_id
+
+        return client
+
+class RxReminder:
+    """An SMART REST App start page"""
+    def GET(self):
+
+        client = complete_oauth_dance()
 
         # Represent the list as an RDF graph
         meds = client.records_X_medications_GET()
+        print "Triples: ", len(meds.graph)
 
         # Find a list of all fulfillments for each med.
         q = """
@@ -136,24 +165,16 @@ footer = """
 </html>"""
 
 
-"""Convenience function to initialize a new SmartClient"""
-def get_smart_client(authorization_header, resource_tokens=None):
-    oa_params = oauth.parse_header(authorization_header)
-    
-    resource_tokens={'oauth_token':       oa_params['smart_oauth_token'],
-                     'oauth_token_secret':oa_params['smart_oauth_token_secret']}
+"""Convenience function to initialize a new SMARTClient"""
+def get_smart_client(api_base,consumer_params, resource_token=None, *args, **kwargs):
 
-    ret = SmartClient(SMART_SERVER_OAUTH['consumer_key'], 
-                       SMART_SERVER_PARAMS, 
-                       SMART_SERVER_OAUTH, 
-                       resource_tokens)
-    
-    ret.record_id=oa_params['smart_record_id']
-    return ret
+    return SMARTClient(api_base, 
+            consumer_params,
+            resource_token,
+            *args, 
+            **kwargs)
 
-app = web.application(urls, globals())
-web.config.debug=True
-if __name__ == "__main__":
-    app.run()
+    if __name__ == "__main__":
+        app.run()
 else:
     application = app.wsgifunc()
