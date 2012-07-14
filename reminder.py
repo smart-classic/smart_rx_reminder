@@ -49,7 +49,7 @@ class BeginOAuthDance:
 
         session.request_token = client.fetch_request_token(params)
         session.api_base = client.api_base
-        return web.redirect(client.auth_redirect_url)
+        return web.seeother(client.auth_redirect_url)
 
 
 def complete_oauth_dance():
@@ -174,7 +174,7 @@ def get_smart_client(api_base,consumer_params, resource_token=None, *args, **kwa
             *args, 
             **kwargs)
 
-    if __name__ == "__main__":
-        app.run()
+if __name__ == "__main__":
+    app.run()
 else:
     application = app.wsgifunc()
