@@ -35,16 +35,24 @@ CONSUMER_PARAMS = {
         'consumer_secret': 'smartapp-secret'
         }
 
+def clean_session():
+    for a in ['record_id', 'user_id', 'access_token']:
+        try:
+            delattr(session, a)
+        except: pass
+
 # Exposes pages through web.py
 class BeginOAuthDance:
 
     """An SMART REST App start page"""
     def GET(self):
 
+        clean_session()
+
         # This is how we know... what container we're talking to
         api_base = web.input().api_base
         client = get_smart_client(api_base, CONSUMER_PARAMS) 
-
+        print web.input().record_id, ": launching"
         params = {  
                 'oauth_callback':'http://localhost:8000/smartapp/after_auth',
                 'smart_record_id': web.input().record_id
